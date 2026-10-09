@@ -1,0 +1,25 @@
+# Israel import-tax rules for personal parcels.
+# STATUS: compiled from secondary sources (see docs/sources.md). Confirm on gov.il / Tax Authority.
+country: IL
+currency: ILS
+last_verified: 2026-10-09
+verified_against: secondary-sources   # change to "gov.il" once checked against the official page
+sources:
+  - https://www.vatupdate.com/2026/06/10/israel-restores-75-vat-exemption-threshold-for-personal-imports/
+  - https://www.iclglobal.com/news_update/vat-exemption-threshold-for-personal-imports-to-israel-updated/
+  - https://www.comgateway.com/blogs/the-quick-cheat-sheet-for-israel-customs-and-import-taxes/
+vat_rate: 0.18
+# Personal-import exemption: goods at or below this value (USD) pay no VAT/duty.
+# Reverted from 150 to 75 USD effective 2026-06-02 (secondary sources).
+de_minimis_usd: 75
+# Basis for the threshold: "goods" = item value only; "cif" = item + shipping + insurance.
+threshold_basis: goods
+# VAT base: shipping is part of the customs value for VAT once the threshold is exceeded (VERIFY).
+vat_includes_shipping: true
+# Customs duty is generally not charged on personal parcels up to this value (USD) (VERIFY).
+duty_free_up_to_usd: 500
+default_duty_rate: 0.0       # placeholder - above duty_free_up_to_usd real duty depends on HS code
+duty_by_category: {}         # e.g. clothing: 0.12  (fill in only from verified sources)
+handling_fee_usd: 0.0        # courier/customs-broker fees unknown - research and fill in
+shipping_estimate_usd: 8.0   # used only when a source gives no shipping price (labelled estimate)
+local_prices_include_vat: true

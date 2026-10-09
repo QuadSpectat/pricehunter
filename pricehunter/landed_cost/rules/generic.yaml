@@ -1,0 +1,16 @@
+# Fallback for destinations without a dedicated rules file. No taxes are computed.
+country: GENERIC
+currency: USD
+last_verified: 1970-01-01
+verified_against: none
+sources: []
+vat_rate: 0.0
+de_minimis_usd: 1000000
+threshold_basis: goods
+vat_includes_shipping: true
+duty_free_up_to_usd: 1000000
+default_duty_rate: 0.0
+duty_by_category: {}
+handling_fee_usd: 0.0
+shipping_estimate_usd: 10.0
+local_prices_include_vat: true

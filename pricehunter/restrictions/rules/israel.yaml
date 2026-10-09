@@ -1,0 +1,65 @@
+# Keyword rules for import restrictions into Israel. Wording is deliberately non-final:
+# nothing here is legal advice - always verify with customs / the named authority.
+last_verified: 2026-10-09
+verified_against: general-knowledge   # NOT checked against official lists yet
+rules:
+  - code: weapons
+    severity: blocked
+    keywords: [gun, rifle, pistol, taser, stun gun, pepper spray, airsoft, ammunition, crossbow, brass knuckles, switchblade]
+    reason: Weapons and weapon-like items are likely restricted or prohibited - verify with customs.
+    source: https://www.gov.il/en/departments/israel_tax_authority
+  - code: knives
+    severity: warn
+    keywords: [knife, dagger, machete, katana, blade]
+    reason: Knives and blades may be restricted - verify with customs.
+    source: https://www.gov.il/en/departments/israel_tax_authority
+  - code: drones
+    severity: warn
+    keywords: [drone, quadcopter, fpv]
+    reason: Drones likely need approvals (Civil Aviation Authority / Ministry of Communications) - verify.
+    source: https://www.gov.il/en/departments/israel_tax_authority
+  - code: lithium_battery
+    severity: warn
+    keywords: [power bank, powerbank, lithium, li-ion, "18650", lipo, battery pack, e-bike battery]
+    reason: Lithium batteries/power banks often face carrier and air-freight restrictions - verify shipping method.
+    source: https://www.gov.il/en/departments/israel_tax_authority
+  - code: e_cigarette
+    severity: blocked
+    keywords: [vape, e-cigarette, e cigarette, e-liquid, nicotine, hookah, shisha]
+    reason: E-cigarettes and nicotine products are likely restricted - verify with customs.
+    source: https://www.gov.il/en/departments/israel_tax_authority
+  - code: medicine_supplement
+    severity: warn
+    keywords: [medicine, medication, supplement, vitamin, pill, capsule, hormone, steroid, cbd]
+    reason: Medicines and supplements likely need Ministry of Health approval - verify.
+    source: https://www.gov.il/en/departments/ministry_of_health
+  - code: cosmetics
+    severity: warn
+    keywords: [cosmetic, lipstick, perfume, cream, serum, shampoo, nail polish, makeup]
+    reason: Cosmetics are likely subject to Ministry of Health rules - verify.
+    source: https://www.gov.il/en/departments/ministry_of_health
+  - code: food
+    severity: warn
+    keywords: [food, snack, tea, coffee, candy, sauce, spice, seeds]
+    reason: Food products are likely subject to Ministry of Health / Agriculture rules - verify.
+    source: https://www.gov.il/en/departments/ministry_of_health
+  - code: laser
+    severity: warn
+    keywords: [laser pointer, laser engraver, laser module, laser level]
+    reason: Laser devices may be restricted - verify.
+    source: https://www.gov.il/en/departments/israel_tax_authority
+  - code: sii_electrical
+    severity: info
+    keywords: [charger, adapter, adaptor, kettle, heater, hair dryer, toaster, lamp, led strip, extension cord, power supply, appliance]
+    reason: Electrical goods may need to meet Standards Institute (SII) mandatory standards - verify.
+    source: https://www.gov.il/en/departments/standards_institution_of_israel
+  - code: radio_wireless
+    severity: warn
+    keywords: [bluetooth, wifi, wi-fi, wireless, walkie talkie, radio, transmitter, antenna, gps tracker, 4g, 5g, smartwatch]
+    reason: Radio/wireless devices likely need Ministry of Communications approval - verify.
+    source: https://www.gov.il/en/departments/ministry_of_communications
+  - code: magnets_liquids
+    severity: info
+    keywords: [magnet, neodymium, liquid, aerosol, spray, gel]
+    reason: Magnets and liquids can be restricted by some carriers/shipping methods - verify.
+    source: null
