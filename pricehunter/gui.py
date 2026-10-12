@@ -147,6 +147,13 @@ with st.sidebar:
         step=1.0,
         help="Makes the saving estimate accurate. Leave 0 to use the median offer instead.",
     )
+    ship_est = st.number_input(
+        "Shipping to assume when unknown (USD)",
+        min_value=0.0,
+        value=8.0,
+        step=1.0,
+        help="AliExpress does not give shipping via our API. Enter what you see on the product page.",
+    )
     st.divider()
     cost, n, saving = ledger_totals(settings.ledger_path)
     st.metric("Spent on searches so far", f"${cost:.2f}", f"{n} searches")
@@ -200,6 +207,7 @@ if query:
         qty=int(qty),
         no_ai=not use_ai,
         current_price_usd=current or None,
+        ship_estimate_usd=ship_est,
     )
     with st.status("Searching…", expanded=True) as status:
         try:

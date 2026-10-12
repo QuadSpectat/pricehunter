@@ -67,3 +67,8 @@ async def test_retry_on_500_then_success() -> None:
     p = SerpApiShopping("k", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
     offers, _ = await p.safe_search(Product(title="anker"), dest="IL", limit=5)
     assert len(offers) == 1 and calls["n"] == 2
+
+
+def test_aliexpress_offers_warn_about_lowest_variant_price() -> None:
+    offers = AliExpressAffiliate("a", "b").parse(ALI, 10)
+    assert any("LOWEST-variant" in w for w in offers[0].warnings)

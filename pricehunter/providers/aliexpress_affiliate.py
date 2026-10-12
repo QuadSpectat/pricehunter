@@ -21,6 +21,10 @@ from .base import Provider
 
 GATEWAY = "https://api-sg.aliexpress.com/sync"
 METHOD = "aliexpress.affiliate.product.query"
+FROM_PRICE_WARNING = (
+    "AliExpress API gives the LOWEST-variant price: the colour/size you want may cost more "
+    "(check the listing)"
+)
 
 
 def sign(params: dict[str, str], secret: str) -> str:
@@ -102,6 +106,7 @@ class AliExpressAffiliate(Provider):
                     if str(p.get("lastest_volume", "")).isdigit()
                     else None,
                     image_url=p.get("product_main_image_url"),
+                    warnings=[FROM_PRICE_WARNING],
                 )
             )
             if len(offers) >= limit:

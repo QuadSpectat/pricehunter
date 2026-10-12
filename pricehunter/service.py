@@ -27,6 +27,7 @@ class SearchOptions:
     qty: int = 1
     no_ai: bool = False
     current_price_usd: float | None = None
+    ship_estimate_usd: float | None = None
 
 
 async def execute_search(
@@ -66,6 +67,7 @@ async def execute_search(
                 query=query,
                 tracker=tracker,
                 current_price_usd=o.current_price_usd,
+                ship_estimate_usd=o.ship_estimate_usd,
             )
         if report.cost is not None:
             record_run(s.ledger_path, query, report.cost)

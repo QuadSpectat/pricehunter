@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from decimal import Decimal
 
 import httpx
 
@@ -36,6 +37,7 @@ async def run_search(
     query: str = "",
     tracker: CostTracker | None = None,
     current_price_usd: float | None = None,
+    ship_estimate_usd: float | None = None,
 ) -> Report:
     report = Report(query=query or product.query(), product=product, destination=dest)
 
@@ -68,6 +70,8 @@ async def run_search(
 
     progress("computing landed cost...")
     rules = load_rules(dest)
+    if ship_estimate_usd is not None:
+        rules = rules.model_copy(update={"shipping_estimate_usd": Decimal(str(ship_estimate_usd))})
     await fx.load({o.currency for o in offers})
     for o in offers:
         o.landed = compute_landed(o, rules, fx, qty=qty, dest=dest, category=product.category)

@@ -41,6 +41,13 @@ def search(
             help="What you would pay otherwise (USD, landed): used to estimate the saving",
         ),
     ] = None,
+    ship_estimate: Annotated[
+        float | None,
+        typer.Option(
+            "--ship-estimate",
+            help="Shipping (USD) to assume when a source gives none, e.g. the cost you saw on AliExpress",
+        ),
+    ] = None,
     fmt: Annotated[str, typer.Option("--format", help="md,json,csv")] = "md,json,csv",
 ) -> None:
     """Search providers and print a ranked report."""
@@ -53,6 +60,7 @@ def search(
         qty=qty,
         no_ai=no_ai,
         current_price_usd=current_price,
+        ship_estimate_usd=ship_estimate,
     )
     if not s.anthropic_api_key and not no_ai:
         console.print(

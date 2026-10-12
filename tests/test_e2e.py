@@ -76,3 +76,17 @@ async def test_cost_tracking_counts_only_uncached_serp_calls(tmp_path: Path) -> 
     r2 = await run_search(product, providers, fx=fx, cache=cache, tracker=t2)
     assert r2.cost is not None and r2.cost.serp_calls == 0  # served from cache: free
     assert "Search cost" in to_markdown(r1)
+
+
+async def test_ship_estimate_override_changes_totals(tmp_path: Path) -> None:
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    product = Product(title="Anker 737 Power Bank", brand="Anker", model="A1289")
+    fx = StaticFx({"USD": Decimal("3.7")})
+    totals = []
+    for ship in (8.0, 20.0):
+        providers = [AliExpressAffiliate("a", "b", client)]
+        r = await run_search(product, providers, fx=fx, ship_estimate_usd=ship)
+        ali = next(o for o in r.offers if o.provider == "aliexpress")
+        assert ali.landed is not None
+        totals.append(ali.landed.shipping)
+    assert totals == [Decimal("8.0"), Decimal("20.0")]
