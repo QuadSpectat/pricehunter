@@ -12,6 +12,18 @@ from .base import Provider, detect_condition, parse_price
 
 ENDPOINT = "https://serpapi.com/search.json"
 
+# Sellers that Google lists under gl=il but which are NOT Israeli shops: they ship from abroad, so
+# they must pay import tax and need a shipping estimate (observed in real results, 2026-10-12).
+FOREIGN_SELLERS = (
+    "desertcart", "made-in-china", "aliexpress", "alibaba", "temu", "shein", "ebay", "amazon.com",
+    "amazon.ae", "walmart", "banggood", "dhgate", "etsy", "wish",
+)  # fmt: skip
+
+
+def is_foreign_seller(name: str | None) -> bool:
+    n = (name or "").lower()
+    return any(f in n for f in FOREIGN_SELLERS)
+
 
 class SerpApiShopping(Provider):
     name = "serpapi_shopping"
@@ -54,9 +66,12 @@ class SerpApiShopping(Provider):
             url = item.get("link") or item.get("product_link")
             if not url:
                 continue
+            local = self.local and not is_foreign_seller(item.get("source"))
             shipping = None
             delivery = str(item.get("delivery") or "")
-            if "free" in delivery.lower():
+            # "Free delivery" from the gl=us search means free to a US address, NOT to Israel,
+            # so only trust it for genuinely local (Israeli) shops.
+            if local and "free" in delivery.lower():
                 shipping = ShippingOption(price=Decimal(0), currency=cur)
             offers.append(
                 Offer(
@@ -69,8 +84,8 @@ class SerpApiShopping(Provider):
                     seller=item.get("source"),
                     price=amount,
                     currency=cur,
-                    local=self.local,
-                    ship_from="IL" if self.local else None,
+                    local=local,
+                    ship_from="IL" if local else None,
                     shipping=shipping,
                     rating=item.get("rating"),
                     orders=item.get("reviews"),

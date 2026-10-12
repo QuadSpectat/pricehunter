@@ -124,3 +124,52 @@ def test_store_names_are_captured() -> None:
     assert AliExpressAffiliate("a", "b").parse(ALI, 10)[0].seller == "Anker Official Store"
     assert IsraeliStores("k").parse(SERP_IL, 10)[0].seller == "KSP"
     assert EbayProvider("i", "s").parse(EBAY, 5)[0].seller == "shop1"
+
+
+def test_free_delivery_in_us_search_is_not_free_to_israel() -> None:
+    offers = SerpApiShopping("k").parse(
+        {
+            "shopping_results": [
+                {
+                    "title": "Toy",
+                    "link": "https://a",
+                    "price": "$10",
+                    "extracted_price": 10,
+                    "delivery": "Free delivery",
+                }
+            ]
+        },
+        5,
+    )
+    assert offers[0].shipping is None  # unknown -> engine estimates, instead of assuming 0
+
+
+def test_foreign_sellers_under_gl_il_are_not_treated_as_local() -> None:
+    data = {
+        "shopping_results": [
+            {
+                "title": "Toy",
+                "link": "https://a",
+                "source": "Desertcart.ae",
+                "price": "₪100",
+                "extracted_price": 100,
+            },
+            {
+                "title": "Toy",
+                "link": "https://b",
+                "source": "eBay - someone",
+                "price": "₪50",
+                "extracted_price": 50,
+            },
+            {
+                "title": "Toy",
+                "link": "https://c",
+                "source": "KSP",
+                "price": "₪120",
+                "extracted_price": 120,
+            },
+        ]
+    }
+    a, b, c = IsraeliStores("k").parse(data, 10)
+    assert not a.local and not b.local and a.ship_from is None
+    assert c.local and c.ship_from == "IL"
