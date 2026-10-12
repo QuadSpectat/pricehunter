@@ -60,6 +60,7 @@ class Provider(ABC):
 
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         self._client = client
+        self.paid_calls = 0  # successful billable API calls (for cost tracking)
 
     @property
     def client(self) -> httpx.AsyncClient:

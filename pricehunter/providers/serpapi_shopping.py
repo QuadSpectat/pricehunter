@@ -37,6 +37,7 @@ class SerpApiShopping(Provider):
         data = await request_json(
             self.client, self.name, "GET", ENDPOINT, params=params, limiter=self._limiter
         )
+        self.paid_calls += 1
         return self.parse(data, limit)
 
     def parse(self, data: dict, limit: int) -> list[Offer]:  # type: ignore[type-arg]

@@ -12,6 +12,7 @@ from rich.markdown import Markdown
 
 from .cache import Cache
 from .config import Settings, load_settings
+from .costs import CostTracker, ledger_totals, record_run, tracker_from_settings
 from .landed_cost.engine import load_rules
 from .landed_cost.fx import FxRates
 from .llm import Llm
@@ -27,8 +28,8 @@ app.add_typer(rules_app, name="rules")
 console = Console()
 
 
-def _llm(s: Settings) -> Llm | None:
-    return Llm(s.anthropic_api_key, s.model) if s.anthropic_api_key else None
+def _llm(s: Settings, tracker: CostTracker | None = None) -> Llm | None:
+    return Llm(s.anthropic_api_key, s.model, tracker) if s.anthropic_api_key else None
 
 
 @app.command()
@@ -39,6 +40,16 @@ def search(
     include_local: bool = True,
     include_global: bool = True,
     qty: int = 1,
+    no_ai: Annotated[
+        bool, typer.Option("--no-ai", help="Skip Claude calls (cheaper, less accurate)")
+    ] = False,
+    current_price: Annotated[
+        float | None,
+        typer.Option(
+            "--current-price",
+            help="What you would pay otherwise (USD, landed): used to estimate the saving",
+        ),
+    ] = None,
     fmt: Annotated[str, typer.Option("--format", help="md,json,csv")] = "md,json,csv",
 ) -> None:
     """Search providers and print a ranked report."""
@@ -47,7 +58,10 @@ def search(
     async def go() -> None:
         cache = Cache(s.cache_path)
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            llm = _llm(s)
+            tracker = tracker_from_settings(
+                s.model, s.price_in_per_mtok, s.price_out_per_mtok, s.serpapi_cost_per_search
+            )
+            llm = None if no_ai else _llm(s, tracker)
             with console.status("resolving product..."):
                 product = await resolve(query, client, llm)
             console.print(f"Product: [bold]{product.title}[/] (query: {product.query()})")
@@ -61,7 +75,10 @@ def search(
                     product, providers, fx=FxRates(client, cache), dest=dest.upper(), qty=qty,
                     limit=max_results, include_local=include_local, include_global=include_global,
                     llm=llm, cache=cache, progress=lambda m: st.update(m), query=query,
+                    tracker=tracker, current_price_usd=current_price,
                 )  # fmt: skip
+        if report.cost is not None:
+            record_run(s.ledger_path, query, report.cost)
         console.print(Markdown(to_markdown(report)))
         out = save_report(report, {f.strip() for f in fmt.split(",")})
         console.print(f"Saved to [bold]{out}[/]")
@@ -80,6 +97,18 @@ def providers() -> None:
     console.print(
         f"{'anthropic (LLM)':18} {'[green]configured[/]' if s.anthropic_api_key else '[red]missing key[/]'}"
     )
+
+
+@app.command()
+def costs() -> None:
+    """Show the running total spent on searches."""
+    s = load_settings()
+    cost, n, saving = ledger_totals(s.ledger_path)
+    console.print(
+        f"{n} search(es) logged: total cost ${cost:.2f}, "
+        f"sum of per-search potential savings ${saving:.2f}"
+    )
+    console.print(f"Assumed: SerpAPI ${s.serpapi_cost_per_search}/search, model {s.model}")
 
 
 @rules_app.command("check")

@@ -33,6 +33,23 @@ def to_markdown(r: Report) -> str:
         lines += ["", f"> ⚠ {r.rules_note}"]
     for w in r.warnings:
         lines += ["", f"> ⚠ {w}"]
+    if r.cost is not None:
+        c = r.cost
+        ils = f" (~{c.total_usd * c.ils_per_usd:.2f} ILS)" if c.ils_per_usd else ""
+        lines += ["", "## Search cost"]
+        lines.append(
+            f"- This search: **${c.total_usd:.3f}**{ils} = SerpAPI {c.serp_calls} call(s) "
+            f"${c.serpapi_usd:.3f} + Claude {c.tokens_in:,} in / {c.tokens_out:,} out tokens "
+            f"${c.llm_usd:.3f}"
+        )
+        if c.potential_saving_usd is not None:
+            lines.append(f"- Potential saving: ${c.potential_saving_usd:.2f} ({c.saving_basis})")
+        lines.append(f"- **{c.verdict}**")
+        if c.cumulative_searches:
+            lines.append(
+                f"- Running total: ${c.cumulative_cost_usd:.2f} over {c.cumulative_searches} search(es)"
+            )
+        lines.append("- Estimates from list prices; searches served from cache cost nothing.")
     picks = [("Cheapest", r.cheapest), ("Fastest", r.fastest), ("Best value", r.best_value)]
     lines += ["", "## Picks"]
     for label, o in picks:

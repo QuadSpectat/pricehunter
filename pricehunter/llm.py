@@ -11,13 +11,15 @@ from typing import Any
 from anthropic import AsyncAnthropic
 from anthropic.types import TextBlock
 
+from .costs import CostTracker
 from .errors import ResolverError
 
 
 class Llm:
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, tracker: CostTracker | None = None) -> None:
         self._client = AsyncAnthropic(api_key=api_key)
         self.model = model
+        self.tracker = tracker
 
     async def complete(
         self, system: str, user: str, *, image: Path | None = None, max_tokens: int = 1500
@@ -44,6 +46,11 @@ class Llm:
             system=system,
             messages=[{"role": "user", "content": content}],  # type: ignore[typeddict-item]
         )
+        if self.tracker is not None:
+            u = msg.usage  # cached tokens count as input (conservative)
+            tokens_in = u.input_tokens + (u.cache_creation_input_tokens or 0)
+            tokens_in += u.cache_read_input_tokens or 0
+            self.tracker.add_llm(tokens_in, u.output_tokens)
         return "".join(b.text for b in msg.content if isinstance(b, TextBlock))
 
     async def complete_json(self, system: str, user: str, *, image: Path | None = None) -> Any:

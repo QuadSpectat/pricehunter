@@ -57,3 +57,22 @@ async def test_full_run(tmp_path: Path) -> None:
     assert {p.name for p in out.iterdir()} == {"report.md", "report.json", "report.csv"}
     again = await run_search(product, providers, fx=fx, cache=cache)
     assert any("cached" in v for v in again.provider_status.values())
+
+
+async def test_cost_tracking_counts_only_uncached_serp_calls(tmp_path: Path) -> None:
+    from pricehunter.costs import CostTracker
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    providers = [IsraeliStores("k", client), SerpApiShopping("k", client)]
+    product = Product(title="Anker 737 Power Bank", brand="Anker", model="A1289")
+    fx = StaticFx({"USD": Decimal("3.7")})
+    cache = Cache(tmp_path / "c.sqlite")
+    t1 = CostTracker(serp_per_search=0.025)
+    r1 = await run_search(product, providers, fx=fx, cache=cache, tracker=t1)
+    assert r1.cost is not None and r1.cost.serp_calls == 2 and r1.cost.serpapi_usd == 0.05
+    t2 = CostTracker(serp_per_search=0.025)
+    for p in providers:
+        p.paid_calls = 0
+    r2 = await run_search(product, providers, fx=fx, cache=cache, tracker=t2)
+    assert r2.cost is not None and r2.cost.serp_calls == 0  # served from cache: free
+    assert "Search cost" in to_markdown(r1)

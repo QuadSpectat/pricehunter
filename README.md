@@ -33,6 +33,15 @@ pricehunter search "https://www.aliexpress.com/item/123.html" --format md,json
 pricehunter search .\photo.jpg             # needs ANTHROPIC_API_KEY
 ```
 
+## What each search costs
+
+Every report has a **Search cost** section: SerpAPI calls (each uncached call x `SERPAPI_COST_PER_SEARCH`,
+default $0.025 = Starter plan; set `0` on the free tier) plus Claude tokens at list price for your
+`PRICEHUNTER_MODEL`. It compares that with the **potential saving** (median offer minus cheapest offer, or
+your `--current-price` minus the cheapest) and says whether the search was worth it. Cached results are
+free. `pricehunter costs` shows the running total (`cost_ledger.jsonl`). `--no-ai` skips Claude calls.
+A search without a model number is marked ROUGH, because the offers may be different products.
+
 ## How it works
 
 resolver (URL/image/text → Product) → providers (parallel, cached 6h) → matcher (title/variant heuristics,

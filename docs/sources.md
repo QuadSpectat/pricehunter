@@ -33,3 +33,13 @@ Reported timeline (secondary sources):
   https://www.iclglobal.com/news_update/vat-exemption-threshold-for-personal-imports-to-israel-updated/ ,
   https://www.comgateway.com/blogs/the-quick-cheat-sheet-for-israel-customs-and-import-taxes/
 - Handling/courier fees: not yet found. Needs research (Israel Post / couriers).
+
+## Israel tax rules - verification attempt 2026-10-12
+- gov.il pages return HTTP 403 to automated fetches, so they were NOT read directly.
+- Via search-result summary of the Tax Authority parcel guide: <= USD 75 exempt (tobacco/alcohol excluded);
+  75-500 USD no customs duty but VAT (and purchase tax where relevant); > 500 USD full taxes.
+- Maariv 2026-02-24 quotes the Tax Authority letter: threshold stays USD 75 (extended to 2026-06-01);
+  vatupdate (2026-06-10) says USD 75 restored from 2026-06-02. Status after June 2026 not confirmed.
+- Still TO CONFIRM on gov.il: exact valuation basis (shipping/insurance), whether shipping enters the VAT base,
+  current threshold today, purchase-tax items, any handling/broker fees.
+- Official pages to check by hand are listed under `official_sources` in israel.yaml.

@@ -23,6 +23,8 @@ class TaxRules(BaseModel):
     last_verified: date
     verified_against: str = "unknown"
     sources: list[str] = Field(default_factory=list)
+    official_sources: list[str] = Field(default_factory=list)
+    purchase_tax_modelled: bool = True
     vat_rate: Decimal
     de_minimis_usd: Decimal
     threshold_basis: Literal["goods", "cif"] = "goods"
@@ -107,6 +109,8 @@ def compute_landed(
             vat = vat_base * rules.vat_rate
             fees = fx.from_usd(rules.handling_fee_usd, cur)
             notes.append(f"VAT {rules.vat_rate:.0%} applied (above exemption)")
+            if not rules.purchase_tax_modelled:
+                notes.append("purchase tax (if applicable to this product) is NOT included")
     elif offer.local and rules.local_prices_include_vat:
         notes.append("local price assumed to include VAT")
 

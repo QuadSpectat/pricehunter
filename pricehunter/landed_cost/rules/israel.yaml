@@ -1,25 +1,40 @@
 # Israel import-tax rules for personal parcels.
-# STATUS: compiled from secondary sources (see docs/sources.md). Confirm on gov.il / Tax Authority.
+#
+# STATUS (2026-10-12): the gov.il pages could not be opened by our tools (HTTP 403 to bots).
+# Values below match (a) a search-result summary of the Tax Authority's own parcel guide and
+# (b) Hebrew press reporting of the Tax Authority's letter. A human should open the official
+# pages listed under `official_sources`, confirm the "TO CONFIRM" items, then set
+# `verified_against: gov.il`. Until then the engine keeps printing a "verify" warning.
 country: IL
 currency: ILS
-last_verified: 2026-10-09
-verified_against: secondary-sources   # change to "gov.il" once checked against the official page
+last_verified: 2026-10-12
+verified_against: gov.il-summary+press   # becomes "gov.il" only after a human check of the pages below
+official_sources:                        # open these in a browser to confirm
+  - https://www.gov.il/en/pages/guide-to-importing-personally-via-parcels-or-shipping-companies
+  - https://www.gov.il/en/pages/customs-personal-import-general-info
+  - https://www.gov.il/en/service/customs-tax-calculation-import-by-israelis   # official tax calculator
 sources:
+  - https://www.gov.il/en/pages/guide-to-importing-personally-via-parcels-or-shipping-companies
+  - https://www.gov.il/en/pages/press_26112025            # Finance Ministry: proposed rise to USD 150 (later reversed)
+  - https://www.maariv.co.il/economy/israel/article-1288490   # Tax Authority letter: threshold stays USD 75 (2026-02-24)
   - https://www.vatupdate.com/2026/06/10/israel-restores-75-vat-exemption-threshold-for-personal-imports/
-  - https://www.iclglobal.com/news_update/vat-exemption-threshold-for-personal-imports-to-israel-updated/
-  - https://www.comgateway.com/blogs/the-quick-cheat-sheet-for-israel-customs-and-import-taxes/
 vat_rate: 0.18
-# Personal-import exemption: goods at or below this value (USD) pay no VAT/duty.
-# Reverted from 150 to 75 USD effective 2026-06-02 (secondary sources).
+# Personal-import exemption: parcel value at or below this (USD) pays no taxes
+# (tobacco and alcohol excluded). History: 75 -> 150 (Jan 2026) -> back to 75 (Feb-Jun 2026).
+# Press says it stays 75 as of June 2026; current status after that is TO CONFIRM.
 de_minimis_usd: 75
-# Basis for the threshold: "goods" = item value only; "cif" = item + shipping + insurance.
+# Gov guide (via summary): exemption judged on the value of the goods. Press: shipping not included,
+# insurance/fees may be. TO CONFIRM exact wording; "goods" = item value only.
 threshold_basis: goods
-# VAT base: shipping is part of the customs value for VAT once the threshold is exceeded (VERIFY).
+# Whether shipping is added to the VAT base above the threshold: TO CONFIRM (assumed yes).
 vat_includes_shipping: true
-# Customs duty is generally not charged on personal parcels up to this value (USD) (VERIFY).
+# Gov guide (via summary): between 75 and 500 USD no customs duty, but VAT (and purchase tax
+# where relevant) apply; above 500 USD full taxes apply.
 duty_free_up_to_usd: 500
-default_duty_rate: 0.0       # placeholder - above duty_free_up_to_usd real duty depends on HS code
-duty_by_category: {}         # e.g. clothing: 0.12  (fill in only from verified sources)
-handling_fee_usd: 0.0        # courier/customs-broker fees unknown - research and fill in
+default_duty_rate: 0.0       # above 500 USD real duty depends on the HS code; not modelled
+duty_by_category: {}         # fill only from official tariff data
+# Purchase tax (mas knia) applies to some goods between 75 and 500 USD; not modelled yet.
+purchase_tax_modelled: false
+handling_fee_usd: 0.0        # courier/customs-broker fees: no official figure found; left at 0
 shipping_estimate_usd: 8.0   # used only when a source gives no shipping price (labelled estimate)
 local_prices_include_vat: true

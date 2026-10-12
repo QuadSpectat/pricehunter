@@ -83,6 +83,9 @@ class FxRates:
     def from_usd(self, amount_usd: Decimal, cur: str) -> Decimal:
         return amount_usd * self._ils_per["USD"][0] / self._ils_per[cur][0]
 
+    def ils_per_usd(self) -> float:
+        return float(self._ils_per["USD"][0])
+
     def describe(self) -> str:
         used = [
             f"1 {c} = {r:.4f} ILS ({n})"

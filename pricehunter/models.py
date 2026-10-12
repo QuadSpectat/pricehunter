@@ -8,6 +8,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from .costs import RunCost
+
 
 class MatchLevel(StrEnum):
     EXACT = "exact"
@@ -107,3 +109,4 @@ class Report(BaseModel):
     rules_note: str = ""
     provider_status: dict[str, str] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
+    cost: RunCost | None = None

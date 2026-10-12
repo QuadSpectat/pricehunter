@@ -8,6 +8,7 @@ from collections.abc import Callable
 import httpx
 
 from .cache import PRICE_TTL, Cache
+from .costs import CostTracker
 from .landed_cost.engine import compute_landed, load_rules
 from .landed_cost.fx import FxRates
 from .llm import Llm
@@ -33,6 +34,8 @@ async def run_search(
     checker: RestrictionChecker | None = None,
     progress: Callable[[str], None] = lambda _msg: None,
     query: str = "",
+    tracker: CostTracker | None = None,
+    current_price_usd: float | None = None,
 ) -> Report:
     report = Report(query=query or product.query(), product=product, destination=dest)
 
@@ -82,6 +85,14 @@ async def run_search(
     add_warnings(offers)
     ranked, report.cheapest, report.fastest, report.best_value = rank(offers)
     report.offers = select_display(ranked, limit)
+    if tracker is not None:
+        tracker.add_serp(sum(p.paid_calls for p in providers))
+        report.cost = tracker.summary(
+            [o.landed.total_usd for o in ranked if o.landed],
+            current_price_usd=current_price_usd,
+            generic=not product.model,
+            ils_per_usd=fx.ils_per_usd(),
+        )
     return report
 
 
