@@ -56,16 +56,21 @@ class Llm:
     async def complete_json(
         self, system: str, user: str, *, image: Path | None = None, max_tokens: int = 1500
     ) -> Any:
-        text = await self.complete(
-            system + "\nRespond with a single JSON value and nothing else.",
-            user,
-            image=image,
-            max_tokens=max_tokens,
-        )
-        m = re.search(r"[\[{].*[\]}]", text, re.S)
-        if not m:
-            raise ResolverError("LLM returned no JSON")
-        try:
-            return json.loads(m.group())
-        except json.JSONDecodeError as e:
-            raise ResolverError(f"LLM returned invalid JSON: {e}") from e
+        error = "LLM returned no JSON"
+        for _attempt in range(2):  # the model occasionally emits broken JSON: retry once
+            text = await self.complete(
+                system + "\nRespond with a single JSON value and nothing else. "
+                "Escape any double quotes inside strings.",
+                user,
+                image=image,
+                max_tokens=max_tokens,
+            )
+            m = re.search(r"[\[{].*[\]}]", text, re.S)
+            if not m:
+                error = "LLM returned no JSON"
+                continue
+            try:
+                return json.loads(m.group())
+            except json.JSONDecodeError as e:
+                error = f"LLM returned invalid JSON: {e}"
+        raise ResolverError(error)

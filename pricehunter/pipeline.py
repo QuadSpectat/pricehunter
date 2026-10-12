@@ -147,6 +147,9 @@ async def run_search(
             [o.landed.total_usd for o in ranked if o.landed],
             current_price_usd=current_price_usd,
             generic=not product.model,
+            cheapest_estimated=bool(
+                report.cheapest and report.cheapest.landed and report.cheapest.landed.estimated
+            ),
             ils_per_usd=fx.ils_per_usd(),
         )
     return report

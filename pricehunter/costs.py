@@ -79,6 +79,7 @@ class CostTracker:
         current_price_usd: float | None = None,
         ils_per_usd: float = 0.0,
         generic: bool = False,
+        cheapest_estimated: bool = False,
     ) -> RunCost:
         """Build the run summary. `totals_usd` are landed totals of the acceptable offers."""
         saving: float | None = None
@@ -97,6 +98,8 @@ class CostTracker:
         else:
             saving = max(saving, 0.0)
             worth = saving > self.total_usd
+            if cheapest_estimated:
+                basis += " - ROUGH: the cheapest offer's shipping/tax is estimated, not quoted"
             if generic and current_price_usd is None:
                 basis += (
                     " - ROUGH: the query has no model number, so offers may be different products"

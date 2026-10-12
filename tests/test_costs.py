@@ -55,3 +55,10 @@ def test_generic_query_marks_saving_as_rough() -> None:
     assert "ROUGH" in t.summary(totals, generic=True).saving_basis
     assert "ROUGH" not in t.summary(totals, generic=False).saving_basis
     assert "ROUGH" not in t.summary(totals, generic=True, current_price_usd=50.0).saving_basis
+
+
+def test_estimated_cheapest_marks_saving_as_rough() -> None:
+    t = CostTracker()
+    totals = [Decimal("10"), Decimal("20"), Decimal("30")]
+    assert "estimated" in t.summary(totals, cheapest_estimated=True).saving_basis
+    assert "estimated" not in t.summary(totals).saving_basis

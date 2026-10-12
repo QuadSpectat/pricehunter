@@ -150,3 +150,16 @@ def test_reference_listing_parsed_from_screenshot_json() -> None:
     assert free.reference is not None and free.reference.shipping == 0
     assert product_from_json({"title": "T", "reference": {"price": None}}, "f").reference is None
     assert product_from_json({"title": "T"}, "f").reference is None
+
+
+async def test_llm_json_is_retried_once_on_broken_output() -> None:
+    from pricehunter.llm import Llm
+
+    llm = Llm("k", "claude-sonnet-5-5")
+    replies = iter(['[{"i": 0, "reason": "has "quote" inside"}]', '[{"i": 0}]'])
+
+    async def fake_complete(*_a: object, **_k: object) -> str:
+        return next(replies)
+
+    llm.complete = fake_complete  # type: ignore[method-assign]
+    assert await llm.complete_json("s", "u") == [{"i": 0}]
