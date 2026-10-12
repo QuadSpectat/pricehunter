@@ -25,6 +25,11 @@ Bank of Israel exchange rates need no key.
 
 ## Usage
 
+**GUI:** double-click `run_gui.bat` (or run `.\.venv\Scripts\python -m streamlit run pricehunter\gui.py`) and open
+http://localhost:8501. Type a product name, paste a link or upload a photo.
+
+**Command line:**
+
 ```powershell
 pricehunter providers                      # which providers are configured
 pricehunter rules check                    # how stale the tax rules are

@@ -53,9 +53,14 @@ class Llm:
             self.tracker.add_llm(tokens_in, u.output_tokens)
         return "".join(b.text for b in msg.content if isinstance(b, TextBlock))
 
-    async def complete_json(self, system: str, user: str, *, image: Path | None = None) -> Any:
+    async def complete_json(
+        self, system: str, user: str, *, image: Path | None = None, max_tokens: int = 1500
+    ) -> Any:
         text = await self.complete(
-            system + "\nRespond with a single JSON value and nothing else.", user, image=image
+            system + "\nRespond with a single JSON value and nothing else.",
+            user,
+            image=image,
+            max_tokens=max_tokens,
         )
         m = re.search(r"[\[{].*[\]}]", text, re.S)
         if not m:

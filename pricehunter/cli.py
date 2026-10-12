@@ -5,31 +5,22 @@ from __future__ import annotations
 import asyncio
 from typing import Annotated
 
-import httpx
 import typer
 from rich.console import Console
 from rich.markdown import Markdown
 
-from .cache import Cache
-from .config import Settings, load_settings
-from .costs import CostTracker, ledger_totals, record_run, tracker_from_settings
+from .config import load_settings
+from .costs import ledger_totals
 from .landed_cost.engine import load_rules
-from .landed_cost.fx import FxRates
-from .llm import Llm
-from .pipeline import run_search
 from .providers import build_providers
 from .report.export import save_report
 from .report.markdown import to_markdown
-from .resolver import resolve
+from .service import SearchOptions, execute_search
 
 app = typer.Typer(help="Find the best landed price for a product.", no_args_is_help=True)
 rules_app = typer.Typer(help="Tax-rule tools.")
 app.add_typer(rules_app, name="rules")
 console = Console()
-
-
-def _llm(s: Settings, tracker: CostTracker | None = None) -> Llm | None:
-    return Llm(s.anthropic_api_key, s.model, tracker) if s.anthropic_api_key else None
 
 
 @app.command()
@@ -54,35 +45,34 @@ def search(
 ) -> None:
     """Search providers and print a ranked report."""
     s = load_settings()
+    options = SearchOptions(
+        dest=dest,
+        max_results=max_results,
+        include_local=include_local,
+        include_global=include_global,
+        qty=qty,
+        no_ai=no_ai,
+        current_price_usd=current_price,
+    )
+    if not s.anthropic_api_key and not no_ai:
+        console.print(
+            "[yellow]No ANTHROPIC_API_KEY: AI matching, image input and AI restriction checks are off.[/]"
+        )
 
     async def go() -> None:
-        cache = Cache(s.cache_path)
-        async with httpx.AsyncClient(follow_redirects=True) as client:
-            tracker = tracker_from_settings(
-                s.model, s.price_in_per_mtok, s.price_out_per_mtok, s.serpapi_cost_per_search
+        with console.status("working...") as st:
+            report = await execute_search(
+                query,
+                s,
+                options,
+                progress=lambda m: st.update(m),
+                on_product=lambda p: console.print(
+                    f"Product: [bold]{p.title}[/] (query: {p.query()})"
+                ),
             )
-            llm = None if no_ai else _llm(s, tracker)
-            with console.status("resolving product..."):
-                product = await resolve(query, client, llm)
-            console.print(f"Product: [bold]{product.title}[/] (query: {product.query()})")
-            if llm is None:
-                console.print(
-                    "[yellow]No ANTHROPIC_API_KEY: AI matching, image input and AI restriction checks are off.[/]"
-                )
-            providers = build_providers(s, client)
-            with console.status("working...") as st:
-                report = await run_search(
-                    product, providers, fx=FxRates(client, cache), dest=dest.upper(), qty=qty,
-                    limit=max_results, include_local=include_local, include_global=include_global,
-                    llm=llm, cache=cache, progress=lambda m: st.update(m), query=query,
-                    tracker=tracker, current_price_usd=current_price,
-                )  # fmt: skip
-        if report.cost is not None:
-            record_run(s.ledger_path, query, report.cost)
         console.print(Markdown(to_markdown(report)))
         out = save_report(report, {f.strip() for f in fmt.split(",")})
         console.print(f"Saved to [bold]{out}[/]")
-        cache.close()
 
     asyncio.run(go())
 

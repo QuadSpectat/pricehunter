@@ -12,6 +12,9 @@ dependencies = [
   "anthropic>=0.40",
 ]
 
+[project.optional-dependencies]
+gui = ["streamlit>=1.35"]
+
 [project.scripts]
 pricehunter = "pricehunter.cli:app"
 
@@ -41,3 +44,7 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[[tool.mypy.overrides]]
+module = ["pandas", "streamlit", "streamlit.*"]
+ignore_missing_imports = true

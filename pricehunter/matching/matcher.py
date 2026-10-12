@@ -122,13 +122,17 @@ async def llm_verify(product: Product, offers: list[Offer], llm: Llm, top: int =
         result = await llm.complete_json(
             "You verify whether shop listings are the SAME product as the target. Compare brand, model, "
             "specs and variants (color/size/capacity/voltage/plug). Return a JSON list of "
-            '{"i": int, "verdict": "exact|likely|similar|rejected", "reason": str}.',
+            '{"i": int, "verdict": "exact|likely|similar|rejected", "reason": str}. '
+            "Keep each reason under 15 words.",
             f"Target: {product.model_dump_json()}\nListings:\n{listing}",
+            max_tokens=4000,
         )
     except Exception as e:  # heuristics stand, but say so
         return f"error: {type(e).__name__}: {str(e)[:120]}"
+    if isinstance(result, dict):  # tolerate {"results": [...]} style wrappers
+        result = next((v for v in result.values() if isinstance(v, list)), result)
     if not isinstance(result, list):
-        return "error: unexpected AI response"
+        return f"error: unexpected AI response ({type(result).__name__}: {str(result)[:80]})"
     checked = 0
     for r in result:
         try:
