@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-gui = ["streamlit>=1.35"]
+gui = ["streamlit>=1.35", "streamlit-paste-button>=0.1.2"]
 
 [project.scripts]
 pricehunter = "pricehunter.cli:app"
@@ -46,5 +46,5 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [[tool.mypy.overrides]]
-module = ["pandas", "streamlit", "streamlit.*"]
+module = ["pandas", "streamlit", "streamlit.*", "streamlit_paste_button"]
 ignore_missing_imports = true

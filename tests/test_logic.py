@@ -110,3 +110,17 @@ def test_dedupe_and_balanced_display() -> None:
     offers[10].provider = "israeli_stores"
     shown = select_display(offers, 6)
     assert len(shown) == 6 and any(x.provider == "israeli_stores" for x in shown)
+
+
+def test_product_from_json_drops_none_placeholders() -> None:
+    from pricehunter.resolver.text_resolver import product_from_json
+
+    p = product_from_json(
+        {
+            "title": "T",
+            "variants": {"color": "green", "size": "None", "plug": None},
+            "specs": {"a": "null"},
+        },
+        "fallback",
+    )
+    assert p.variants == {"color": "green"} and p.specs == {}

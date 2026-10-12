@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import streamlit as st
+from streamlit_paste_button import paste_image_button
 
 from pricehunter.config import load_settings
 from pricehunter.costs import ledger_totals
@@ -18,6 +21,13 @@ from pricehunter.service import SearchOptions, execute_search
 
 st.set_page_config(page_title="PriceHunter", page_icon="🔎", layout="wide")
 settings = load_settings()
+
+
+def _png_bytes(img: Any) -> bytes:
+    """Encode a PIL image (from the clipboard) as PNG bytes."""
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def offers_table(report: Report) -> pd.DataFrame:
@@ -187,16 +197,28 @@ with tab_link:
     if go_link and u.strip():
         query = u.strip()
 with tab_img:
-    f = st.file_uploader(
-        "Upload a product photo or screenshot", type=["png", "jpg", "jpeg", "webp"]
+    st.markdown(
+        "**Take a screenshot, then click the button and press Ctrl+V** (or upload a file below)."
     )
+    pasted = paste_image_button(
+        "📋 Paste screenshot from clipboard", key="paste_img", background_color="#ff4b4b"
+    )
+    if pasted.image_data is not None:
+        st.session_state["pasted_png"] = _png_bytes(pasted.image_data)
+    f = st.file_uploader(
+        "…or upload a product photo or screenshot", type=["png", "jpg", "jpeg", "webp"]
+    )
+    shown: bytes | None = f.getvalue() if f is not None else st.session_state.get("pasted_png")
+    if shown:
+        st.image(shown, caption="Image that will be searched", width=320)
     go_img = st.button("Search", key="go_img", type="primary")
-    if go_img and f is not None:
-        tmp = Path(tempfile.mkdtemp()) / f.name
-        tmp.write_bytes(f.getvalue())
+    if go_img and shown:
+        name = f.name if f is not None else "pasted_screenshot.png"
+        tmp = Path(tempfile.mkdtemp()) / name
+        tmp.write_bytes(shown)
         query = str(tmp)
     elif go_img:
-        st.error("Choose an image first.")
+        st.error("Paste or upload an image first.")
 
 if query:
     options = SearchOptions(
