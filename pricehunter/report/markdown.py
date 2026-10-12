@@ -17,8 +17,9 @@ def _row(o: Offer) -> str:
     la = o.landed
     flag = "~" if la.estimated else ""
     restr = ", ".join(sorted({f"{r.severity.value}:{r.code}" for r in o.restrictions})) or "-"
+    cond = "" if o.condition == "new" else f" **[{o.condition.upper()}]**"
     return (
-        f"| {o.provider} | {_link(o.title[:60], o.url)} | {o.match.value} ({o.confidence:.0%}) "
+        f"| {o.provider} | {_link(o.title[:60], o.url)}{cond} | {o.match.value} ({o.confidence:.0%}) "
         f"| {_money(la.item)} {o.currency} | {flag}{_money(la.shipping)} | {_money(la.vat + la.duty + la.fees)} "
         f"| **{flag}{_money(la.total_ils)} ILS** / {flag}{_money(la.total_usd)} USD | {restr} |"
     )

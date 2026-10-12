@@ -90,3 +90,35 @@ async def test_ship_estimate_override_changes_totals(tmp_path: Path) -> None:
         assert ali.landed is not None
         totals.append(ali.landed.shipping)
     assert totals == [Decimal("8.0"), Decimal("20.0")]
+
+
+async def test_second_hand_hidden_by_default(tmp_path: Path) -> None:
+    serp = {
+        "shopping_results": [
+            {
+                "title": "Anker 737 Power Bank A1289",
+                "link": "https://n",
+                "price": "$100",
+                "extracted_price": 100.0,
+            },
+            {
+                "title": "Anker 737 Power Bank A1289 - Used",
+                "link": "https://u",
+                "price": "$60",
+                "extracted_price": 60.0,
+            },
+        ]
+    }
+
+    def h(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=serp)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(h))
+    product = Product(title="Anker 737 Power Bank", brand="Anker", model="A1289")
+    fx = StaticFx({"USD": Decimal("3.7")})
+    new_only = await run_search(product, [SerpApiShopping("k", client)], fx=fx)
+    assert [o.condition for o in new_only.offers] == ["new"]
+    assert "condition_filter" in new_only.provider_status
+    both = await run_search(product, [SerpApiShopping("k", client)], fx=fx, include_used=True)
+    assert sorted(o.condition for o in both.offers) == ["new", "used"]
+    assert "[USED]" in to_markdown(both)

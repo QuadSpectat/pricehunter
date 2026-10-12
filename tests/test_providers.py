@@ -72,3 +72,49 @@ async def test_retry_on_500_then_success() -> None:
 def test_aliexpress_offers_warn_about_lowest_variant_price() -> None:
     offers = AliExpressAffiliate("a", "b").parse(ALI, 10)
     assert any("LOWEST-variant" in w for w in offers[0].warnings)
+
+
+def test_detect_condition() -> None:
+    from pricehunter.providers.base import detect_condition
+
+    assert detect_condition("Anker Power Bank 10000mAh") == "new"
+    assert detect_condition("Anker Power Bank - Used") == "used"
+    assert detect_condition("Anker Power Bank unused sealed") == "new"  # 'unused' is not 'used'
+    assert detect_condition("iPhone 13", "Certified Refurbished") == "refurbished"
+    assert detect_condition("Sony camera Open Box") == "used"
+    assert detect_condition("סוללת גיבוי משומש") == "used"
+    assert detect_condition("Phone", "second_hand") == "used"
+    assert detect_condition("Phone", "New") == "new"
+
+
+def test_condition_parsed_by_providers() -> None:
+    serp = {
+        "shopping_results": [
+            {
+                "title": "Anker Power Bank",
+                "link": "https://a",
+                "price": "$10",
+                "extracted_price": 10,
+            },
+            {
+                "title": "Anker Power Bank",
+                "link": "https://b",
+                "price": "$5",
+                "extracted_price": 5,
+                "second_hand_condition": "used",
+            },
+        ]
+    }
+    got = [o.condition for o in SerpApiShopping("k").parse(serp, 10)]
+    assert got == ["new", "used"]
+    ebay = {
+        "itemSummaries": [
+            {
+                "title": "Camera",
+                "price": {"value": "50", "currency": "USD"},
+                "itemWebUrl": "u",
+                "condition": "Used",
+            },
+        ]
+    }
+    assert EbayProvider("i", "s").parse(ebay, 5)[0].condition == "used"

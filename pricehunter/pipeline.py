@@ -30,6 +30,7 @@ async def run_search(
     limit: int = 15,
     include_local: bool = True,
     include_global: bool = True,
+    include_used: bool = False,
     llm: Llm | None = None,
     cache: Cache | None = None,
     checker: RestrictionChecker | None = None,
@@ -58,6 +59,13 @@ async def run_search(
         offers.extend(found)
 
     offers = [o for o in offers if (o.local and include_local) or (not o.local and include_global)]
+    if not include_used:
+        hidden = sum(1 for o in offers if o.condition != "new")
+        offers = [o for o in offers if o.condition == "new"]
+        if hidden:
+            report.provider_status["condition_filter"] = (
+                f"hid {hidden} second-hand/refurbished listing(s); tick the box to include them"
+            )
     if not offers:
         report.warnings.append("no offers found (check `pricehunter providers` for configuration)")
 

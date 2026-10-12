@@ -10,7 +10,7 @@ import httpx
 
 from ..http import RateLimiter, request_json
 from ..models import Offer, Product, ShippingOption
-from .base import Provider
+from .base import Provider, detect_condition
 
 TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token"
 SEARCH_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search"
@@ -100,6 +100,7 @@ class EbayProvider(Provider):
                     title=it.get("title", ""),
                     url=it["itemWebUrl"],
                     seller=seller.get("username"),
+                    condition=detect_condition(it.get("title", ""), str(it.get("condition") or "")),
                     price=price,
                     currency=cur,
                     ship_from=(it.get("itemLocation") or {}).get("country"),

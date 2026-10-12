@@ -8,7 +8,7 @@ import httpx
 
 from ..http import RateLimiter, request_json
 from ..models import Offer, Product, ShippingOption
-from .base import Provider, parse_price
+from .base import Provider, detect_condition, parse_price
 
 ENDPOINT = "https://serpapi.com/search.json"
 
@@ -62,6 +62,9 @@ class SerpApiShopping(Provider):
                 Offer(
                     provider=self.name,
                     title=item.get("title", ""),
+                    condition=detect_condition(
+                        item.get("title", ""), str(item.get("second_hand_condition") or "")
+                    ),
                     url=url,
                     seller=item.get("source"),
                     price=amount,

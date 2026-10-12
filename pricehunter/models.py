@@ -93,6 +93,7 @@ class Offer(BaseModel):
     landed: LandedCost | None = None
     restrictions: list[Restriction] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    condition: str = "new"  # new | used | refurbished (assumed new when the source says nothing)
     fetched_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 

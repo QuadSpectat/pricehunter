@@ -42,6 +42,7 @@ def offers_table(report: Report) -> pd.DataFrame:
                 "Listing": o.title,
                 "Open": o.url,
                 "Match": f"{o.match.value} ({o.confidence:.0%})",
+                "Condition": o.condition,
                 "Item": f"{float(la.item):,.2f} {o.currency}",
                 "Shipping": ("~" if la.estimated else "") + f"{float(la.shipping):,.2f}",
                 "Taxes": f"{float(la.vat + la.duty + la.fees):,.2f}",
@@ -145,6 +146,11 @@ with st.sidebar:
     qty = st.number_input("Quantity", 1, 100, 1)
     inc_local = st.checkbox("Include Israeli stores", True)
     inc_global = st.checkbox("Include global sellers", True)
+    inc_used = st.checkbox(
+        "Include second-hand / refurbished",
+        False,
+        help="Off = new products only (default). Used listings are detected from the title and the seller's condition field.",
+    )
     use_ai = st.checkbox(
         "Use Claude AI (better matching, costs a little)",
         value=bool(settings.anthropic_api_key),
@@ -226,6 +232,7 @@ if query:
         max_results=max_results,
         include_local=inc_local,
         include_global=inc_global,
+        include_used=inc_used,
         qty=int(qty),
         no_ai=not use_ai,
         current_price_usd=current or None,

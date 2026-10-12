@@ -17,7 +17,7 @@ import httpx
 
 from ..http import RateLimiter, request_json
 from ..models import Offer, Product
-from .base import Provider
+from .base import Provider, detect_condition
 
 GATEWAY = "https://api-sg.aliexpress.com/sync"
 METHOD = "aliexpress.affiliate.product.query"
@@ -95,6 +95,7 @@ class AliExpressAffiliate(Provider):
                 Offer(
                     provider=self.name,
                     title=p.get("product_title", ""),
+                    condition=detect_condition(p.get("product_title", "")),
                     url=url,
                     seller=p.get("shop_url"),
                     price=price,

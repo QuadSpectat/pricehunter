@@ -22,6 +22,24 @@ _SYMBOLS = {
 }
 
 
+_REFURB = re.compile(r"(?<!\w)(refurbished|renewed|reconditioned|re-?certified|מחודש)(?!\w)", re.I)
+_USED = re.compile(
+    r"(?<!\w)(used|second[-_ ]?hand|pre[-_ ]?owned|open[-_ ]box|like new|for parts|"
+    r"משומש|יד שנייה)(?!\w)",
+    re.I,
+)
+
+
+def detect_condition(title: str, hint: str | None = None) -> str:
+    """Return "new", "used" or "refurbished" from a source's condition field and/or the title."""
+    text = f"{hint or ''} {title}"
+    if _REFURB.search(text):
+        return "refurbished"
+    if _USED.search(text):
+        return "used"
+    return "new"
+
+
 def parse_price(
     text: str | float | int | None, default_currency: str = "USD"
 ) -> tuple[Decimal, str] | None:

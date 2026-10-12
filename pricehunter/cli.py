@@ -30,6 +30,9 @@ def search(
     max_results: int = 15,
     include_local: bool = True,
     include_global: bool = True,
+    include_used: Annotated[
+        bool, typer.Option("--include-used", help="Also show second-hand/refurbished listings")
+    ] = False,
     qty: int = 1,
     no_ai: Annotated[
         bool, typer.Option("--no-ai", help="Skip Claude calls (cheaper, less accurate)")
@@ -57,6 +60,7 @@ def search(
         max_results=max_results,
         include_local=include_local,
         include_global=include_global,
+        include_used=include_used,
         qty=qty,
         no_ai=no_ai,
         current_price_usd=current_price,

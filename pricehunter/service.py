@@ -24,6 +24,7 @@ class SearchOptions:
     max_results: int = 15
     include_local: bool = True
     include_global: bool = True
+    include_used: bool = False
     qty: int = 1
     no_ai: bool = False
     current_price_usd: float | None = None
@@ -61,6 +62,7 @@ async def execute_search(
                 limit=o.max_results,
                 include_local=o.include_local,
                 include_global=o.include_global,
+                include_used=o.include_used,
                 llm=llm,
                 cache=cache,
                 progress=progress,
