@@ -91,6 +91,28 @@ def show_report(report: Report) -> None:
         if c.saving_basis:
             st.caption(f"Saving basis: {c.saving_basis}")
 
+    ref = report.reference
+    if ref is not None and ref.landed is not None:
+        st.subheader("Your listing (read from your screenshot)")
+        a, b, c2, d = st.columns(4)
+        a.metric("Store", ref.seller or "unknown")
+        b.metric("Item price", f"{float(ref.price):,.2f} {ref.currency}")
+        if ref.shipping is None:
+            ship_txt = "not visible"
+        elif not ref.shipping.price:
+            ship_txt = "free"
+        else:
+            ship_txt = f"{float(ref.shipping.price):,.2f} {ref.currency}"
+        c2.metric("Shipping", ship_txt)
+        d.metric(
+            "Landed total",
+            f"₪{float(ref.landed.total_ils):,.0f}",
+            f"${float(ref.landed.total_usd):,.2f}",
+        )
+        if report.product.reference and report.product.reference.delivery_text:
+            st.caption(f"Delivery shown: {report.product.reference.delivery_text}")
+        st.caption("Savings below are measured against this listing.")
+
     st.subheader("Best picks")
     cols = st.columns(3)
     pick_card(cols[0], "Cheapest", report.cheapest)

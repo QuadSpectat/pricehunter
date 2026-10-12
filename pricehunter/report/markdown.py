@@ -51,6 +51,24 @@ def to_markdown(r: Report) -> str:
                 f"- Running total: ${c.cumulative_cost_usd:.2f} over {c.cumulative_searches} search(es)"
             )
         lines.append("- Estimates from list prices; searches served from cache cost nothing.")
+    if r.reference is not None and r.reference.landed is not None:
+        ro, la = r.reference, r.reference.landed
+        ship = (
+            "shipping not visible (estimated)"
+            if ro.shipping is None
+            else (
+                "free shipping"
+                if not ro.shipping.price
+                else f"shipping {_money(ro.shipping.price)} {ro.currency}"
+            )
+        )
+        store = ro.seller or "unknown store"
+        lines += ["", "## Your listing (from your screenshot)"]
+        lines.append(
+            f"- {store}: {_money(ro.price)} {ro.currency}, {ship} -> landed "
+            f"**{'~' if la.estimated else ''}{_money(la.total_ils)} ILS** / {_money(la.total_usd)} USD"
+        )
+        lines.append("- This is the baseline the savings are measured against.")
     picks = [("Cheapest", r.cheapest), ("Fastest", r.fastest), ("Best value", r.best_value)]
     lines += ["", "## Picks"]
     for label, o in picks:

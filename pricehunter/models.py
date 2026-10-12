@@ -24,6 +24,18 @@ class Severity(StrEnum):
     BLOCKED = "blocked"
 
 
+class ReferenceListing(BaseModel):
+    """The listing the user showed us (e.g. read from a screenshot): their baseline to beat."""
+
+    store: str | None = None
+    price: Decimal | None = None
+    original_price: Decimal | None = None
+    shipping: Decimal | None = None  # 0 = free shipping, None = not visible
+    currency: str = "USD"
+    delivery_text: str | None = None
+    source: str = "screenshot"
+
+
 class Product(BaseModel):
     title: str
     brand: str | None = None
@@ -34,6 +46,7 @@ class Product(BaseModel):
     category: str | None = None
     source_url: str | None = None
     search_query: str = ""
+    reference: ReferenceListing | None = None
 
     def query(self) -> str:
         if self.search_query:
@@ -111,3 +124,4 @@ class Report(BaseModel):
     provider_status: dict[str, str] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     cost: RunCost | None = None
+    reference: Offer | None = None  # the user's own listing, with landed cost

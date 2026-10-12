@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import re
+from decimal import Decimal
+
 from ..llm import Llm
-from ..models import Product
+from ..models import Product, ReferenceListing
 
 SYSTEM = (
     "Extract a product from the user's description. Return JSON with keys: title, brand, model, "
@@ -24,6 +27,34 @@ def _clean(d: object) -> dict[str, str]:
     }
 
 
+def _num(v: object) -> Decimal | None:
+    """Parse a number the model returned ("22.99", 22.99, "US $22.99"); None if absent."""
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, int | float):
+        return Decimal(str(v))
+    m = re.search(r"\d[\d,]*\.?\d*", str(v))
+    return Decimal(m.group().replace(",", "")) if m else None
+
+
+def _reference(d: object) -> ReferenceListing | None:
+    if not isinstance(d, dict):
+        return None
+    price = _num(d.get("price"))
+    if price is None:
+        return None
+    store = d.get("store")
+    delivery = d.get("delivery_text")
+    return ReferenceListing(
+        store=None if str(store or "").strip().lower() in _EMPTY else str(store),
+        price=price,
+        original_price=_num(d.get("original_price")),
+        shipping=_num(d.get("shipping")),
+        currency=str(d.get("currency") or "USD").upper()[:3],
+        delivery_text=None if str(delivery or "").strip().lower() in _EMPTY else str(delivery),
+    )
+
+
 def product_from_json(data: dict, fallback_title: str, source_url: str | None = None) -> Product:  # type: ignore[type-arg]
     return Product(
         title=data.get("title") or fallback_title,
@@ -35,6 +66,7 @@ def product_from_json(data: dict, fallback_title: str, source_url: str | None = 
         category=data.get("category"),
         search_query=data.get("search_query") or "",
         source_url=source_url,
+        reference=_reference(data.get("reference")),
     )
 
 

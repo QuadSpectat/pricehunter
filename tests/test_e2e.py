@@ -132,3 +132,48 @@ async def test_store_column_in_report(tmp_path: Path) -> None:
     )
     md = to_markdown(report)
     assert "| Store |" in md and "KSP" in md
+
+
+async def test_reference_listing_becomes_the_savings_baseline(tmp_path: Path) -> None:
+    from pricehunter.costs import CostTracker
+    from pricehunter.models import ReferenceListing
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    product = Product(
+        title="Anker 737 Power Bank",
+        brand="Anker",
+        model="A1289",
+        reference=ReferenceListing(
+            store="Some Store", price=Decimal("200"), shipping=Decimal("15"), currency="USD"
+        ),
+    )
+    fx = StaticFx({"USD": Decimal("3.7")})
+    report = await run_search(product, [IsraeliStores("k", client)], fx=fx, tracker=CostTracker())
+    assert report.reference is not None and report.reference.landed is not None
+    # 200 + 15 shipping, above the 75 USD exemption -> VAT applies on top
+    assert report.reference.landed.total_usd > Decimal("215")
+    assert report.cost is not None and "your stated price" in report.cost.saving_basis
+    md = to_markdown(report)
+    assert "Your listing" in md and "Some Store" in md
+
+
+async def test_offers_from_the_users_own_store_are_skipped(tmp_path: Path) -> None:
+    from pricehunter.models import ReferenceListing
+    from pricehunter.pipeline import same_store
+
+    assert same_store("Yiwu-Loves-Home Store", "Yiwu-Loves-Home Store(Trader)")
+    assert not same_store("KSP", "Anker Official Store")
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    product = Product(
+        title="Anker 737 Power Bank",
+        brand="Anker",
+        model="A1289",
+        reference=ReferenceListing(
+            store="Anker Official Store", price=Decimal("90"), shipping=Decimal("5")
+        ),
+    )
+    r = await run_search(
+        product, [AliExpressAffiliate("a", "b", client)], fx=StaticFx({"USD": Decimal("3.7")})
+    )
+    assert all(o.seller != "Anker Official Store" for o in r.offers)
+    assert "your_store" in r.provider_status

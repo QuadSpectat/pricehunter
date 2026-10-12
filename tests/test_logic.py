@@ -124,3 +124,29 @@ def test_product_from_json_drops_none_placeholders() -> None:
         "fallback",
     )
     assert p.variants == {"color": "green"} and p.specs == {}
+
+
+def test_reference_listing_parsed_from_screenshot_json() -> None:
+    from pricehunter.resolver.text_resolver import product_from_json
+
+    p = product_from_json(
+        {
+            "title": "Snake Toy",
+            "reference": {
+                "store": "Yiwu-Loves-Home Store",
+                "price": "US $22.99",
+                "original_price": 32.84,
+                "shipping": "US $15.66",
+                "currency": "usd",
+                "delivery_text": "Oct 21 - 28",
+            },
+        },
+        "fallback",
+    )
+    r = p.reference
+    assert r is not None and r.price == Decimal("22.99") and r.shipping == Decimal("15.66")
+    assert r.currency == "USD" and r.store == "Yiwu-Loves-Home Store"
+    free = product_from_json({"title": "T", "reference": {"price": 10, "shipping": 0}}, "f")
+    assert free.reference is not None and free.reference.shipping == 0
+    assert product_from_json({"title": "T", "reference": {"price": None}}, "f").reference is None
+    assert product_from_json({"title": "T"}, "f").reference is None

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Callable
 from decimal import Decimal
 
@@ -14,10 +15,20 @@ from .landed_cost.engine import compute_landed, load_rules
 from .landed_cost.fx import FxRates
 from .llm import Llm
 from .matching.matcher import llm_verify, score_all
-from .models import Offer, Product, Report
+from .models import MatchLevel, Offer, Product, Report, ShippingOption
 from .providers.base import Provider
 from .ranking import add_warnings, dedupe, rank, select_display
 from .restrictions.checker import RestrictionChecker
+
+
+def _store_key(name: str | None) -> str:
+    return re.sub(r"trader|[^a-z0-9]", "", (name or "").lower())
+
+
+def same_store(a: str | None, b: str | None) -> bool:
+    """True when two seller names clearly refer to the same shop (ignores case, punctuation)."""
+    ka, kb = _store_key(a), _store_key(b)
+    return len(ka) >= 6 and len(kb) >= 6 and (ka in kb or kb in ka)
 
 
 async def run_search(
@@ -80,10 +91,43 @@ async def run_search(
     rules = load_rules(dest)
     if ship_estimate_usd is not None:
         rules = rules.model_copy(update={"shipping_estimate_usd": Decimal(str(ship_estimate_usd))})
-    await fx.load({o.currency for o in offers})
+    ref = product.reference
+    await fx.load({o.currency for o in offers} | ({ref.currency} if ref and ref.price else set()))
     for o in offers:
         o.landed = compute_landed(o, rules, fx, qty=qty, dest=dest, category=product.category)
     report.fx_note = fx.describe()
+    if ref is not None and ref.price is not None:
+        ship = None
+        if ref.shipping is not None:
+            ship = ShippingOption(price=ref.shipping, currency=ref.currency)
+        ref_offer = Offer(
+            provider="your_listing",
+            title=product.title,
+            url=product.source_url or "",
+            seller=ref.store,
+            price=ref.price,
+            currency=ref.currency,
+            shipping=ship,
+            ship_from=None,
+            match=MatchLevel.EXACT,
+            confidence=1.0,
+            match_reason="the listing in your screenshot",
+        )
+        ref_offer.landed = compute_landed(
+            ref_offer, rules, fx, qty=qty, dest=dest, category=product.category
+        )
+        report.reference = ref_offer
+        same = [o for o in offers if same_store(o.seller, ref.store)]
+        if (
+            same
+        ):  # AliExpress shows its lowest-variant price: not a real alternative to your listing
+            offers = [o for o in offers if all(o is not s for s in same)]
+            report.provider_status["your_store"] = (
+                f"skipped {len(same)} listing(s) from your own store ({ref.store}): their API price "
+                "is the cheapest variant, not the one in your screenshot"
+            )
+        if current_price_usd is None:
+            current_price_usd = float(ref_offer.landed.total_usd)
     if (w := rules.staleness_warning()) is not None:
         report.rules_note = w
 
