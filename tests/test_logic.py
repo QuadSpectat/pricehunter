@@ -84,3 +84,29 @@ def test_url_page_facts_and_slug() -> None:
     assert f["title"] == "Foo & Bar" and f["og:title"] == "OG Foo"
     assert f["ld_brand"] == "B" and f["ld_model"] == "M1"
     assert title_from_slug("https://x.com/item/anker-737-power-bank.html") == "anker 737 power bank"
+
+
+def test_accessory_rejected_unless_requested() -> None:
+    power_bank = Product(title="Anker power bank", brand="Anker")
+    case = score_offer(power_bank, o("Silicone Case for Anker 10000mAh Power Bank"))
+    assert case.match is MatchLevel.REJECTED and "accessory" in case.match_reason
+    real = score_offer(power_bank, o("Anker PowerCore 10000 Power Bank"))
+    assert real.match is not MatchLevel.REJECTED
+    wanted = Product(title="Anker power bank case", brand="Anker")
+    assert (
+        score_offer(wanted, o("Silicone Case for Anker Power Bank")).match
+        is not MatchLevel.REJECTED
+    )
+
+
+def test_dedupe_and_balanced_display() -> None:
+    from pricehunter.ranking import dedupe, select_display
+
+    a = o("Anker Nano Power Bank", "30")
+    assert len(dedupe([a, a.model_copy(), o("Other", "30")])) == 2
+    offers = _ranked([(f"ali{i}", str(10 + i), 20) for i in range(10)] + [("shop", "200", 5)])
+    for x in offers[:10]:
+        x.provider = "aliexpress"
+    offers[10].provider = "israeli_stores"
+    shown = select_display(offers, 6)
+    assert len(shown) == 6 and any(x.provider == "israeli_stores" for x in shown)

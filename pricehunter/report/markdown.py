@@ -3,6 +3,11 @@ from __future__ import annotations
 from ..models import Offer, Report
 
 
+def _link(text: str, url: str) -> str:
+    safe = url.replace(" ", "%20").replace("(", "%28").replace(")", "%29").replace("|", "%7C")
+    return f"[{text.replace('|', '/')}]({safe})"
+
+
 def _money(v: object) -> str:
     return f"{float(v):,.2f}"  # type: ignore[arg-type]
 
@@ -13,7 +18,7 @@ def _row(o: Offer) -> str:
     flag = "~" if la.estimated else ""
     restr = ", ".join(sorted({f"{r.severity.value}:{r.code}" for r in o.restrictions})) or "-"
     return (
-        f"| {o.provider} | [{o.title[:60]}]({o.url}) | {o.match.value} ({o.confidence:.0%}) "
+        f"| {o.provider} | {_link(o.title[:60], o.url)} | {o.match.value} ({o.confidence:.0%}) "
         f"| {_money(la.item)} {o.currency} | {flag}{_money(la.shipping)} | {_money(la.vat + la.duty + la.fees)} "
         f"| **{flag}{_money(la.total_ils)} ILS** / {flag}{_money(la.total_usd)} USD | {restr} |"
     )
@@ -33,7 +38,7 @@ def to_markdown(r: Report) -> str:
     for label, o in picks:
         if o and o.landed:
             lines.append(
-                f"- **{label}:** [{o.title[:70]}]({o.url}) ({o.provider}), {_money(o.landed.total_ils)} ILS"
+                f"- **{label}:** {_link(o.title[:70], o.url)} ({o.provider}), {_money(o.landed.total_ils)} ILS"
             )
         else:
             lines.append(f"- **{label}:** n/a (no data)")

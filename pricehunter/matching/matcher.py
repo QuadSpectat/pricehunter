@@ -28,6 +28,12 @@ _COLORS = {
     "gray", "grey", "silver", "gold", "brown", "beige",
 }  # fmt: skip
 _PLUGS = {"eu", "us", "uk", "au"}
+# Words that mark an accessory for the product rather than the product itself.
+ACCESSORY_WORDS = {
+    "case", "cases", "cover", "covers", "shell", "bag", "pouch", "sleeve", "protector",
+    "protective", "skin", "holder", "strap", "lanyard", "sticker", "film", "silicone",
+    "carrying", "storage", "base", "dock",
+}  # fmt: skip
 
 
 def tokens(text: str) -> set[str]:
@@ -53,9 +59,22 @@ def variant_conflicts(product: Product, title: str) -> list[str]:
     return out
 
 
+def accessory_words(product: Product, title: str) -> set[str]:
+    """Accessory words in the title that the user did not ask for."""
+    asked = tokens(product.query() + " " + product.title)
+    if asked & ACCESSORY_WORDS:  # the user is shopping for an accessory: don't filter
+        return set()
+    return tokens(title) & ACCESSORY_WORDS
+
+
 def score_offer(product: Product, offer: Offer) -> Offer:
     want = tokens(product.query())
     have = tokens(offer.title)
+    acc = accessory_words(product, offer.title)
+    if acc:
+        offer.match, offer.confidence = MatchLevel.REJECTED, 0.05
+        offer.match_reason = f"looks like an accessory ({', '.join(sorted(acc))})"
+        return offer
     coverage = len(want & have) / len(want) if want else 0.0
     model_hit = bool(product.model) and _norm(product.model or "") in _norm(offer.title)
     brand_hit = bool(product.brand) and (product.brand or "").lower() in offer.title.lower()
@@ -88,11 +107,14 @@ def score_all(product: Product, offers: list[Offer]) -> list[Offer]:
     return [score_offer(product, o) for o in offers]
 
 
-async def llm_verify(product: Product, offers: list[Offer], llm: Llm, top: int = 8) -> None:
-    """Ask the LLM to confirm/reject the best heuristic candidates. Mutates offers in place."""
+async def llm_verify(product: Product, offers: list[Offer], llm: Llm, top: int = 12) -> str:
+    """Ask the LLM to confirm/reject the best heuristic candidates. Mutates offers in place.
+
+    Returns a status string for the report ("ok (n checked)" or "error: ...").
+    """
     cands = [o for o in offers if o.match is not MatchLevel.REJECTED][:top]
     if not cands:
-        return
+        return "skipped (no candidates)"
     listing = "\n".join(
         f"{i}. {o.title} | {o.price} {o.currency} | {o.seller}" for i, o in enumerate(cands)
     )
@@ -103,19 +125,22 @@ async def llm_verify(product: Product, offers: list[Offer], llm: Llm, top: int =
             '{"i": int, "verdict": "exact|likely|similar|rejected", "reason": str}.',
             f"Target: {product.model_dump_json()}\nListings:\n{listing}",
         )
-    except Exception:
-        return  # heuristics stand
+    except Exception as e:  # heuristics stand, but say so
+        return f"error: {type(e).__name__}: {str(e)[:120]}"
     if not isinstance(result, list):
-        return
+        return "error: unexpected AI response"
+    checked = 0
     for r in result:
         try:
             o = cands[int(r["i"])]
             level = MatchLevel(r["verdict"])
         except (KeyError, ValueError, IndexError, TypeError):
             continue
+        checked += 1
         o.match = level
         o.match_reason = f"AI check: {r.get('reason', '')}"
         if level is MatchLevel.REJECTED:
             o.confidence = min(o.confidence, 0.1)
         elif level is MatchLevel.EXACT:
             o.confidence = max(o.confidence, 0.9)
+    return f"ok ({checked}/{len(cands)} checked)"

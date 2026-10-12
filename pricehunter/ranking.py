@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 from statistics import median
 
@@ -65,3 +66,38 @@ def rank(
     base = _total(cheapest)
     best = max(ok, key=lambda o: _value_score(o, base))
     return ok, cheapest, fastest, best
+
+
+def dedupe(offers: list[Offer]) -> list[Offer]:
+    """Drop repeated listings (same normalized title, price, currency and seller)."""
+    seen: set[tuple[str, str, str, str | None]] = set()
+    out: list[Offer] = []
+    for o in offers:
+        key = (re.sub(r"[^a-z0-9]", "", o.title.lower()), str(o.price), o.currency, o.seller)
+        if key not in seen:
+            seen.add(key)
+            out.append(o)
+    return out
+
+
+def select_display(ranked: list[Offer], limit: int) -> list[Offer]:
+    """Pick up to `limit` offers so one provider cannot crowd out the others.
+
+    Each provider gets an equal share first; leftover slots go to the cheapest remaining.
+    """
+    providers = list(dict.fromkeys(o.provider for o in ranked))
+    if not providers:
+        return []
+    share = max(1, limit // len(providers))
+    counts: dict[str, int] = {}
+    chosen: list[Offer] = []
+    rest: list[Offer] = []
+    for o in ranked:
+        if counts.get(o.provider, 0) < share:
+            counts[o.provider] = counts.get(o.provider, 0) + 1
+            chosen.append(o)
+        else:
+            rest.append(o)
+    chosen += rest[: max(0, limit - len(chosen))]
+    chosen.sort(key=_total)
+    return chosen[:limit]

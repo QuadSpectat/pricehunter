@@ -14,7 +14,7 @@ from .llm import Llm
 from .matching.matcher import llm_verify, score_all
 from .models import Offer, Product, Report
 from .providers.base import Provider
-from .ranking import add_warnings, rank
+from .ranking import add_warnings, dedupe, rank, select_display
 from .restrictions.checker import RestrictionChecker
 
 
@@ -57,10 +57,11 @@ async def run_search(
         report.warnings.append("no offers found (check `pricehunter providers` for configuration)")
 
     progress("matching...")
+    offers = dedupe(offers)
     offers = score_all(product, offers)
     offers.sort(key=lambda o: -o.confidence)
     if llm:
-        await llm_verify(product, offers, llm)
+        report.provider_status["ai_match"] = await llm_verify(product, offers, llm)
 
     progress("computing landed cost...")
     rules = load_rules(dest)
@@ -80,7 +81,7 @@ async def run_search(
 
     add_warnings(offers)
     ranked, report.cheapest, report.fastest, report.best_value = rank(offers)
-    report.offers = ranked[:limit]
+    report.offers = select_display(ranked, limit)
     return report
 
 
