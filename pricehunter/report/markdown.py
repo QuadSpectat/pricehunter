@@ -19,7 +19,7 @@ def _row(o: Offer) -> str:
     restr = ", ".join(sorted({f"{r.severity.value}:{r.code}" for r in o.restrictions})) or "-"
     cond = "" if o.condition == "new" else f" **[{o.condition.upper()}]**"
     return (
-        f"| {o.provider} | {_link(o.title[:60], o.url)}{cond} | {o.match.value} ({o.confidence:.0%}) "
+        f"| {o.provider} | {(o.seller or '-').replace('|', '/')} | {_link(o.title[:60], o.url)}{cond} | {o.match.value} ({o.confidence:.0%}) "
         f"| {_money(la.item)} {o.currency} | {flag}{_money(la.shipping)} | {_money(la.vat + la.duty + la.fees)} "
         f"| **{flag}{_money(la.total_ils)} ILS** / {flag}{_money(la.total_usd)} USD | {restr} |"
     )
@@ -62,8 +62,8 @@ def to_markdown(r: Report) -> str:
             lines.append(f"- **{label}:** n/a (no data)")
     lines += [
         "", "## Offers", "",
-        "| Provider | Listing | Match | Item | Shipping | Taxes/fees | Total | Restrictions |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Provider | Store | Listing | Match | Item | Shipping | Taxes/fees | Total | Restrictions |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]  # fmt: skip
     lines += [_row(o) for o in r.offers]
     lines += ["", "`~` = includes estimated values.", ""]

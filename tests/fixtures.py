@@ -51,6 +51,7 @@ ALI = {
                     "product": [
                         {
                             "product_title": "Anker 737 Power Bank 24000mAh black",
+                            "shop_name": "Anker Official Store",
                             "target_sale_price": "62.10",
                             "target_sale_price_currency": "USD",
                             "product_detail_url": "https://aliexpress.com/item/1.html",

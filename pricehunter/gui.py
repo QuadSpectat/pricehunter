@@ -38,6 +38,7 @@ def offers_table(report: Report) -> pd.DataFrame:
             continue
         rows.append(
             {
+                "Store": o.seller or "-",
                 "Source": o.provider,
                 "Listing": o.title,
                 "Open": o.url,

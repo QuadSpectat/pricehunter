@@ -118,3 +118,9 @@ def test_condition_parsed_by_providers() -> None:
         ]
     }
     assert EbayProvider("i", "s").parse(ebay, 5)[0].condition == "used"
+
+
+def test_store_names_are_captured() -> None:
+    assert AliExpressAffiliate("a", "b").parse(ALI, 10)[0].seller == "Anker Official Store"
+    assert IsraeliStores("k").parse(SERP_IL, 10)[0].seller == "KSP"
+    assert EbayProvider("i", "s").parse(EBAY, 5)[0].seller == "shop1"

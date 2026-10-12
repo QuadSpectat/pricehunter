@@ -122,3 +122,13 @@ async def test_second_hand_hidden_by_default(tmp_path: Path) -> None:
     both = await run_search(product, [SerpApiShopping("k", client)], fx=fx, include_used=True)
     assert sorted(o.condition for o in both.offers) == ["new", "used"]
     assert "[USED]" in to_markdown(both)
+
+
+async def test_store_column_in_report(tmp_path: Path) -> None:
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    product = Product(title="Anker 737 Power Bank", brand="Anker", model="A1289")
+    report = await run_search(
+        product, [IsraeliStores("k", client)], fx=StaticFx({"USD": Decimal("3.7")})
+    )
+    md = to_markdown(report)
+    assert "| Store |" in md and "KSP" in md

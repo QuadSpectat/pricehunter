@@ -97,7 +97,7 @@ class AliExpressAffiliate(Provider):
                     title=p.get("product_title", ""),
                     condition=detect_condition(p.get("product_title", "")),
                     url=url,
-                    seller=p.get("shop_url"),
+                    seller=p.get("shop_name") or p.get("shop_url"),
                     price=price,
                     currency=p.get("target_sale_price_currency", "USD"),
                     ship_from="CN",
